@@ -1,6 +1,7 @@
-import { useWeeklyStats } from "@/hooks/useWeeklyStats";
+import { View, Text, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ScrollView, Text, View } from "react-native";
+import { useWeeklyStats } from "../../hooks/useWeeklyStats";
+import { useThemeColors } from "../../hooks/useThemeColors";
 
 function formatDuration(totalSeconds: number) {
     const h = Math.floor(totalSeconds / 3600);
@@ -12,12 +13,16 @@ function formatDuration(totalSeconds: number) {
 const DAY_LABELS = ["dim", "lun", "mar", "mer", "jeu", "ven", "sam"];
 
 export default function Stats() {
-    const { dailyTotals, breakCount, averageSeconds, bestDay, isLoading } = useWeeklyStats();
+    const theme = useThemeColors();
+    const { dailyTotals, breakCount, averageSeconds, bestDay, isLoading } =
+        useWeeklyStats();
 
     if (isLoading) {
         return (
-            <View className="flex-1 items-center justify-center bg-neutral-50">
-                <Text className="text-neutral-400">Chargement...</Text>
+            <View className="flex-1 items-center justify-center bg-background dark:bg-background-dark">
+                <Text className="text-text-muted dark:text-text-muted-dark">
+                    Chargement...
+                </Text>
             </View>
         );
     }
@@ -26,45 +31,43 @@ export default function Stats() {
 
     return (
         <ScrollView
-            className="flex-1 bg-neutral-50 px-4 pt-16"
+            className="flex-1 bg-background dark:bg-background-dark px-4 pt-16"
             contentContainerStyle={{ paddingBottom: 100 }}
         >
-            <Text className="text-2xl font-semibold text-neutral-900 mb-1">
+            <Text className="text-2xl font-semibold text-text-primary dark:text-text-primary-dark mb-1">
                 Stats
             </Text>
-            <Text className="text-sm text-neutral-500 mb-6">
+            <Text className="text-sm text-text-secondary dark:text-text-secondary-dark mb-6">
                 Tes 7 derniers jours
             </Text>
 
             <View className="flex-row gap-3 mb-3">
-                <View className="flex-1 border border-neutral-300 rounded-2xl p-4">
-                    <Text className="text-xs text-neutral-500 mb-1">
+                <View className="flex-1 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-2xl p-4">
+                    <Text className="text-xs text-text-secondary dark:text-text-secondary-dark mb-1">
                         Moyenne focus/jour
                     </Text>
-                    <Text className="tex-xl font-semibold decoration-neutral-900">
+                    <Text className="text-xl font-semibold text-text-primary dark:text-text-primary-dark">
                         {formatDuration(averageSeconds)}
                     </Text>
                 </View>
-                <View className="flex-1 border border-neutral-300 rounded-2xl p-4">
-                    <Text className="text-xs text-neutral-500 mb-1">
+                <View className="flex-1 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-2xl p-4">
+                    <Text className="text-xs text-text-secondary dark:text-text-secondary-dark mb-1">
                         Total pauses
                     </Text>
-                    <Text className="text-xl font-semibold text-neutral-900">
+                    <Text className="text-xl font-semibold text-text-primary dark:text-text-primary-dark">
                         {breakCount}
                     </Text>
                 </View>
             </View>
 
-            <View className="border border-neutral-300 rounded-2xl p-4 mb-3">
-                <Text className="text-sm font-medium text-neutral-900 mb-10">
+            <View className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-2xl p-4 mb-3">
+                <Text className="text-sm font-medium text-text-primary dark:text-text-primary-dark mb-4">
                     Focus par jour
                 </Text>
+
                 <View style={{ height: 100, flexDirection: "row", alignItems: "flex-end", gap: 8 }}>
                     {dailyTotals.map((day, index) => {
-                        const barHeight = Math.max(
-                            (day.totalSeconds / maxSeconds) * 100,
-                            4
-                        );
+                        const barHeight = Math.max((day.totalSeconds / maxSeconds) * 100, 4);
                         const isToday = index === dailyTotals.length - 1;
                         return (
                             <View key={day.dayStart} style={{ flex: 1 }}>
@@ -73,7 +76,7 @@ export default function Stats() {
                                         height: barHeight,
                                         width: "100%",
                                         borderRadius: 4,
-                                        backgroundColor: isToday ? "#171717" : "#d4d4d4",
+                                        backgroundColor: isToday ? theme.accent : theme.borderStrong,
                                     }}
                                 />
                             </View>
@@ -86,7 +89,7 @@ export default function Stats() {
                         return (
                             <Text
                                 key={day.dayStart}
-                                className="text-xs text-neutral-400 text-center"
+                                className="text-xs text-text-muted dark:text-text-muted-dark text-center"
                                 style={{ flex: 1 }}
                             >
                                 {DAY_LABELS[date.getDay()]}
@@ -97,17 +100,17 @@ export default function Stats() {
             </View>
 
             {bestDay && bestDay.totalSeconds > 0 && (
-                <View className="border border-neutral-300 rounded-2xl p-4 flex-row items-center justify-between">
+                <View className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-2xl p-4 flex-row items-center justify-between">
                     <View>
-                        <Text className="text-sm font-medium text-neutral-900 mb-1">
+                        <Text className="text-sm font-medium text-text-primary dark:text-text-primary-dark mb-1">
                             Meilleure journée
                         </Text>
-                        <Text className="text-xs text-neutral-500">
-                            {DAY_LABELS[new Date(bestDay.dayStart).getDay()]}
-                            , {formatDuration(bestDay.totalSeconds)} de focus
+                        <Text className="text-xs text-text-secondary dark:text-text-secondary-dark">
+                            {DAY_LABELS[new Date(bestDay.dayStart).getDay()]},{" "}
+                            {formatDuration(bestDay.totalSeconds)} de focus
                         </Text>
                     </View>
-                    <Ionicons name="trophy-outline" size={24} color="#eab308" />
+                    <Ionicons name="trophy-outline" size={24} color={theme.warning} />
                 </View>
             )}
         </ScrollView>
