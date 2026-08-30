@@ -2,6 +2,10 @@ import { Session, SessionType } from "@/types/session";
 import db from "./client";
 import { MIN_SESSION_DURATION_SECONDS } from "@/constants/config";
 
+export interface DailyFocusTotal {
+    dayStart: number; // Timestamp epoch du début de journée
+    totalSeconds: number;
+}
 
 // Démarre une nouvelle session et retourne son id
 export function startSession(type: SessionType): number {
@@ -58,4 +62,49 @@ export function getSessionsForDay(dayStart: number, dayEnd: number): Session[] {
                 ORDER BY started_at ASC;`,
         [dayStart, dayEnd],
     );
+}
+
+// Retourne le total de temps focus, jour par jour, sur les 7 derniers jours (incluant aujourd'hui)
+export function getWeeklyFocusTotals(): DailyFocusTotal[] {
+    const now = new Date();
+    const todayStart = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+    ).getTime();
+
+    const results: DailyFocusTotal[] = [];
+
+    for (let i = 6; i >= 0; i--) {
+        const dayStart = todayStart - i * 24 * 60 * 60 * 1000;
+        const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+
+        const row = db.getFirstSync<{ total: number | null }>(
+            `SELECT SUM(duration_seconds) as total FROM sessions
+                    WHERE type = 'focus' AND started_at >= ? AND started_at < ? AND ended_at IS NOT NULL;`,
+            [dayStart, dayEnd],
+        );
+
+        results.push({ dayStart, totalSeconds: row?.total ?? 0 });
+    }
+
+    return results;
+}
+
+// Retoune le total de sessions "break" sur les 7 derniers jours
+export function getWeeklyBreakCount(): number {
+    const now = new Date();
+    const sevenDaysAgo = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - 6,
+    ).getTime();
+
+    const row = db.getFirstSync<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sessions
+                WHERE type = 'break' AND started_at >= ? AND ended_at IS NOT NULL;`,
+        [sevenDaysAgo],
+    );
+
+    return row?.count ?? 0;
 }
